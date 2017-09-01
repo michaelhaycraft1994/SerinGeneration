@@ -1,0 +1,22 @@
+      /************************************************************************************************/
+     /                                                                                                /
+    /                                        Serin Generation                                        /
+   /                                           Game Manual                                          /
+  /                                         By: Alex Haycraft                                      /
+ /                                                                                                /
+/************************************************************************************************/
+
+					Table of Contents
+
+1. controls
+
+						Controls
+
+A mouse and keyboard are required for this game. All menu navigation will be handled with the mouse by
+clicking various buttons thorugh out the UI. The keyboard controls the player movement throughout the 
+game world. Below are the key mappings for the game:
+
+	1. W - forward
+	2. A - left
+	3. S - backward
+	4. D - right
