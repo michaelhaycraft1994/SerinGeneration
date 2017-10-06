@@ -40,6 +40,15 @@ typedef struct
 
 typedef struct
 {
+	int oLocationX;
+	int oLocationY;
+	int dLocationX;
+	int dLocationY;
+	int dungeonFlag;
+}Location;
+
+typedef struct
+{
 	char name[20];
 	int hitDie;
 	int armourClass;
@@ -59,6 +68,7 @@ typedef struct
 	Armour arm;
 	Weapon wep;
 	Item inventory[16];
+	Location spot;
 }Class;
 
 Armour initArmour();
@@ -71,7 +81,7 @@ void displayNationalityButtons();
 int restMenu(int*, Class*);
 int chooseNation();
 int saveGame(Class);
-Class attack(Class, Class);
+void attack(Class*, Class*, int*);
 void drawGameUI(Class);
 void gameLoop(Class);
 char* getPlayerName();
@@ -79,7 +89,7 @@ Abilities getAbilities();
 void drawSpellBook();
 int initmouse();
 void characterMenu(Class);
-int toHit(Class, Class);
+int toHit(Class*, Class*);
 void showmouseptr();
 int getModValue(int, Abilities);
 void getmousepos(int*, int*, int*);
@@ -92,5 +102,9 @@ void drawSilloette();
 int timedRest();
 int fullRest(Class);
 void drawRatLord();
-
+void death();
+void getEncounter(Class*);
+void move(Class*, int, int);
+void encounter(Class*);
+void createMonster(Class*);
 #endif

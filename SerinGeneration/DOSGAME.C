@@ -30,8 +30,9 @@ void mainMenu()
 	setfillstyle(SOLID_FILL, 8);
 	settextstyle(4, HORIZ_DIR, 5);
 
+	randomize();
+
 	showmouseptr();
-	getmousepos(&button, &x, &y);
 
 	rectangle(10, 10, getmaxx() - 10, getmaxy() - 10);
 
@@ -134,7 +135,7 @@ void drawGameUI(Class player)
 	/* magic button */
 	rectangle(525,135,605,170);
 	bar(527, 137, 603, 168);
-	outtextxy(530,148,"Magic");
+	outtextxy(530,148,"Talents");
 
 	/* inventory button */
 	rectangle(525,185,605,220);
@@ -174,7 +175,6 @@ void drawSpellBook()
 	}
 }
 
-/* TODO finish the character menu displays */
 void characterMenu(Class player)
 {
 	int exit = 0, button, x, y;
@@ -521,13 +521,16 @@ void gameLoop(Class player)
 			switch (key)
 			{
 				case 'w':
-					drawRatLord();
+					move(&player, 0, 10);
 					break;
 				case 's':
+					move(&player, 0, -10);
 					break;
 				case 'a':
+					move(&player, -10, 0);
 					break;
 				case 'd':
+					move(&player, 10, 0);
 					break;
 			}
 
@@ -580,6 +583,11 @@ Class createCharacter()
 	player.wep = initWeapon();
 	player.armourClass = 10 + player.arm.armourClassMod + getModValue(2, player.abil);
 	strcpy(player.name, getPlayerName());
+	player.spot.oLocationX = 0;
+	player.spot.oLocationY = 0;
+	player.spot.dLocationX = 0;
+	player.spot.dLocationY = 0;
+	player.spot.dungeonFlag = 0;
 	for (i = 0; i < 16; i = i + 1)
 	{
 		strcpy(player.inventory[i].name, "Empty");
@@ -697,8 +705,6 @@ Abilities getAbilities()
 	int reRoll = 0, rolls = 0, buttonPress = 0, button, x, y;
 	char buf[20];
 	Abilities abil;
-
-	randomize();
 
 	while (reRoll == 0)
 	{
@@ -866,7 +872,6 @@ int getModValue(int abilityFlag, Abilities abilities)
 	return abilityFlag;
 }
 
-/* TODO add save location in story and world and wep and arm name */
 int saveGame(Class player)
 {
 	int i;
@@ -962,6 +967,21 @@ int saveGame(Class player)
 	fputs(buf, saveFile);
 
 	sprintf(buf, "%d\n", player.wep.lethalFlag);
+	fputs(buf, saveFile);
+
+	sprintf(buf, "%d\n", player.spot.oLocationX);
+	fputs(buf, saveFile);
+
+	sprintf(buf, "%d\n", player.spot.oLocationY);
+	fputs(buf, saveFile);
+
+	sprintf(buf, "%d\n", player.spot.dLocationX);
+	fputs(buf, saveFile);
+
+	sprintf(buf, "%d\n", player.spot.dLocationY);
+	fputs(buf, saveFile);
+
+	sprintf(buf, "%d\n", player.spot.dungeonFlag);
 	fputs(buf, saveFile);
 
 	for (i = 0; i < 16; i = i + 1)
@@ -1076,6 +1096,21 @@ Class loadGame()
 	fscanf(loadFile, "%s", buf);
 	player.wep.lethalFlag = atoi(buf);
 
+	fscanf(loadFile, "%s", buf);
+	player.spot.oLocationX = atoi(buf);
+
+	fscanf(loadFile, "%s", buf);
+	player.spot.oLocationY = atoi(buf);
+
+	fscanf(loadFile, "%s", buf);
+	player.spot.dLocationX = atoi(buf);
+
+	fscanf(loadFile, "%s", buf);
+	player.spot.dLocationY = atoi(buf);
+
+	fscanf(loadFile, "%s", buf);
+	player.spot.dungeonFlag = atoi(buf);
+
 	for (i = 0; i < 16; i = i + 1)
 	{
 		fscanf(loadFile, "%s", buf);
@@ -1089,47 +1124,51 @@ Class loadGame()
 	return player;
 }
 
-/* TODO test function */
-Class attack(Class attacker, Class defender)
+void attack(Class* attacker, Class* defender, int *i)
 {
+	int dmg = 0;
+	char buf[35];
+
 	switch (toHit(attacker, defender))
 	{
 		case 0:
-			/* TODO handle failed hit */
+			sprintf(buf, "%s Missed!", attacker->name);
+			outtextxy(20, 310 + (*i * 10), ("%s", buf));
 			break;
 		case 1:
-			switch (attacker.wep.wepType)
+			switch (attacker->wep.wepType)
 			{
 				case 0:
-					defender.currentHealth = defender.currentHealth - (roll(attacker.wep.dmgDie) + attacker.abil.strength);
+					dmg = roll(attacker->wep.dmgDie) + getModValue(0, attacker->abil);
+					defender->currentHealth = defender->currentHealth - dmg;
 					break;
 				case 1:
-					defender.currentHealth = defender.currentHealth - (roll(attacker.wep.dmgDie) + attacker.abil.dexterity);
+					dmg = roll(attacker->wep.dmgDie) + getModValue(0, attacker->abil);
+					defender->currentHealth = defender->currentHealth - dmg;
 					break;
 			}
+			sprintf(buf, "hit for %d damage", dmg);
+			outtextxy(20, 310 + (*i * 10), ("%s", buf));
 			break;
 	}
-
-	return defender;
 }
 
-/* TODO test function */
-int toHit(Class attacker, Class defender)
+int toHit(Class* attacker, Class *defender)
 {
 	int hitRoll;
 
-	switch (attacker.wep.wepType)
+	switch (attacker->wep.wepType)
 	{
 		case 0:
-			hitRoll = roll(20) + attacker.abil.strength;
+			hitRoll = roll(20) + attacker->abil.strength;
 			break;
 		case 1:
 
-			hitRoll = roll(20) + attacker.abil.dexterity;
+			hitRoll = roll(20) + attacker->abil.dexterity;
 			break;
 	}
 
-	if (hitRoll > defender.armourClass)
+	if (hitRoll > defender->armourClass)
 		return 1;
 	else
 		return 0;
@@ -1290,7 +1329,7 @@ void drawSilloette()
 	}
 }
 
-/* TODO Roll for every health point and see if a random encounter occurs */
+/* TODO get rid of the time stuff */
 int fullRest(Class player)
 {
 	int hours = 0;
@@ -1306,7 +1345,6 @@ int fullRest(Class player)
 	return hours;
 }
 
-/* TODO solve why only ones digit is displayed */
 int timedRest()
 {
 	int hours = 0, exit = 0, button, x, y, count = 0, key;
@@ -1366,6 +1404,91 @@ int timedRest()
 }
 
 /* TODO add perma-death function that wipes the save file */
+void death()
+{
+	char buf[20];
+
+	if (remove("player.txt") == 0)
+	{
+		/* Call a game over screen */
+	}
+}
+
+void getEncounter(Class *player)
+{
+	if (roll(20) > 14)
+	{
+		encounter(player);
+	}
+}
+
+void encounter(Class *player)
+{
+	int button, x, y, gm, i = 0, tempx, tempy;
+	Class monster;
+	char buf[30];
+
+	createMonster(&monster);
+
+	while (player->currentHealth > 0 && monster.currentHealth > 0)
+	{
+		getmousepos(&button, &x, &y);
+
+		if (x == tempx && y == tempy)
+		{
+
+		}
+		else if (button == 1 && (x >= 425 && x <= 505) && (y >= 135 && y <= 170))
+		{
+			attack(player, &monster, &i);
+			/* attack(&monster, player); */
+			i = i + 1;
+			tempx = x;
+			tempy = y;
+			if (i == 16)
+			{
+				i = 0;
+				setfillstyle(SOLID_FILL, BLACK);
+				bar(12, 302, getmaxx() - 12, getmaxy() - 12);
+				setfillstyle(SOLID_FILL, DARKGRAY);
+			}
+		}
+		/* TODO work on the talents */
+		else if (button == 1 && (x >= 525 && x <= 605) && (y >= 135 && y <= 170))
+		{
+			drawSpellBook();
+		}
+	}
+}
+
+void createMonster(Class* monster)
+{
+	monster->totalHealth = 10;
+	monster->currentHealth = 10;
+	monster->armourClass = 15;
+
+	drawRatLord();
+}
+
+/* TODO Test move function */
+void move(Class *player, int x, int y)
+{
+	switch (player->spot.dungeonFlag)
+	{
+		case 0:
+			player->spot.oLocationX = player->spot.oLocationX + x;
+			player->spot.oLocationY = player->spot.oLocationY + y;
+			/* TODO draw player here */
+			break;
+		case 1:
+			player->spot.dLocationX = player->spot.dLocationX + x;
+			player->spot.dLocationY = player->spot.dLocationY + y;
+			/* TODO draw surrondings for players move here */
+			break;
+	}
+
+	getEncounter(player);
+}
 
 /* TODO make an enemy function */
 void drawRatLord()
